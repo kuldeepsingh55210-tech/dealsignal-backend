@@ -1,0 +1,23 @@
+﻿===================================================
+          DealSignal Backend API Test Report       
+===================================================
+
+≡ƒöä Running Test 1: Health Check (GET /api/health)
+Γ£à PASSED. Response: {"status":"DealSignal API Running"}
+
+≡ƒöä Running Test 2: Send OTP (POST /api/auth/send-otp)
+   Payload: {"phone": "9696858320"}
+   ≡ƒÆí FIX NEEDED: The Auth Controller (auth.controller.js) strictly expects "mobile", "email", and "name" in the payload, not "phone". Let's test with the correct payload...
+
+≡ƒöä Running Test 2.1: Send OTP with correct payload
+≡ƒöä Running Test 3: Webhook Verify (GET /api/whatsapp)
+Γ£à PASSED. Response: TEST123
+
+≡ƒöä Running Test 4: Incoming Webhook Message (POST /api/whatsapp)
+Γ£à PASSED. Response: "EVENT_RECEIVED"
+
+===================================================
+                  SUMMARY REPORT                   
+          TOTAL: 5 | PASSED: 3 | FAILED: 2
+===================================================
+

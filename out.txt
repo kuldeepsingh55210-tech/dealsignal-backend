@@ -1,0 +1,32 @@
+﻿MongoDB connected
+
+--- Step 0: User sends first message ---
+Sent message: "Hello!"
+Lead step: 1 (Expected: 1)
+
+--- Step 1: User replies with budget ---
+Sent message: "50 Lakh"
+Lead step: 2 (Expected: 2), Budget: 50 Lakh
+
+--- Step 2: User replies with location ---
+Sent message: "Mumbai"
+Lead step: 3 (Expected: 3), Location: Mumbai
+
+--- Step 3: User replies with property type ---
+Sent message: "Flat"
+Lead step: 4 (Expected: 4), Property Type: Flat
+Lead status: qualified (Expected: qualified)
+
+--- Messages Log ---
+[inbound] Hello!
+[outbound] ≡ƒæï Hi! I'm here to help you find your perfect property.
+What is your *budget*? (e.g. 50 Lakhs, 1 Crore)
+[inbound] 50 Lakh
+[outbound] Great! Which *location or area* are you looking in?
+[inbound] Mumbai
+[outbound] What *type of property* are you looking for?
+≡ƒÅó Flat | ≡ƒÅí Villa | ≡ƒî│ Plot | ≡ƒÅ¬ Commercial
+[inbound] Flat
+[outbound] Γ£à Thank you! Our broker will contact you shortly. We have marked you as qualified.
+
+Γ£à Script Complete.
