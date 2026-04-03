@@ -15,10 +15,13 @@ const errorMiddleware = require('./src/middleware/error.middleware');
 
 const app = express();
 
+// Trust proxy for Railway
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet());
 
-// CORS — restrict to allowed origin in production
+// CORS
 const allowedOrigins = [
     'http://localhost:5173',
     process.env.CLIENT_URL,
@@ -36,12 +39,10 @@ app.use(cors({
     credentials: true
 }));
 
-// Body parsers with size limit (prevent oversized payload DoS)
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 
-// ngrok browser warning bypass (dev only)
 if (process.env.NODE_ENV !== 'production') {
     app.use((req, res, next) => {
         res.setHeader('ngrok-skip-browser-warning', 'true');
@@ -49,7 +50,6 @@ if (process.env.NODE_ENV !== 'production') {
     });
 }
 
-// Mount routes
 app.use('/api/auth', authRoutes);
 app.use('/api', webhookRoutes);
 app.use('/api/leads', leadRoutes);
@@ -62,10 +62,7 @@ app.use(errorMiddleware);
 const startServer = async () => {
     try {
         await connectDB();
-
-        // Start cron automation after DB is connected
         require('./src/cron/automation');
-
         const PORT = process.env.PORT || 5000;
         app.listen(PORT, () => {
             logger.info(`Server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
