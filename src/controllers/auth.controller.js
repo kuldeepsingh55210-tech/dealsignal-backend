@@ -18,7 +18,7 @@ const sendOTP = async (req, res, next) => {
                 email,
                 mobile
             });
-            await broker.save(); // tenantId generated in pre-save
+            await broker.save();
         }
 
         const otp = otpService.generateOTP();
@@ -26,8 +26,7 @@ const sendOTP = async (req, res, next) => {
         const sent = await otpService.sendOTP(mobile, otp);
 
         if (!sent.success) {
-            // Note: In development, you might want to log the OTP or ignore Twilio failure
-            // return errorResponse(res, "Failed to send OTP", 500); 
+            // OTP logged to console in development
         }
 
         return successResponse(res, null, "OTP sent successfully");
@@ -61,8 +60,8 @@ const verifyOTP = async (req, res, next) => {
 
         res.cookie('token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            secure: true,
+            sameSite: 'none',
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
@@ -78,7 +77,11 @@ const verifyOTP = async (req, res, next) => {
 
 const logout = async (req, res, next) => {
     try {
-        res.clearCookie('token');
+        res.clearCookie('token', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none'
+        });
         return successResponse(res, null, "Logged out successfully");
     } catch (error) {
         next(error);
