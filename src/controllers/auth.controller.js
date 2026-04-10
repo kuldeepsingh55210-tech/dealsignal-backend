@@ -23,10 +23,10 @@ const sendOTP = async (req, res, next) => {
 
         const otp = otpService.generateOTP();
         await otpService.saveOTP(mobile, otp);
-        const sent = await otpService.sendOTP(mobile, otp);
+        const sent = await otpService.sendOTP(mobile, otp, email); // ✅ email pass kiya
 
         if (!sent.success) {
-            // OTP logged to console in development
+            console.log('OTP send failed');
         }
 
         return successResponse(res, null, "OTP sent successfully");
@@ -99,7 +99,7 @@ const getMe = async (req, res, next) => {
 const updateProfile = async (req, res, next) => {
     try {
         const { name } = req.body;
-        
+
         if (!name || typeof name !== 'string' || name.trim().length === 0) {
             return errorResponse(res, "Valid name is required", 400);
         }
