@@ -22,7 +22,7 @@ const sendOTP = async (mobile, otp, email) => {
 
   try {
     await resend.emails.send({
-      from: 'DealSignal CRM <onboarding@resend.dev>',
+      from: 'DealSignal CRM <noreply@narrowtech.in>', // ✅ updated
       to: email,
       subject: '🔐 Your DealSignal Login OTP',
       html: `
