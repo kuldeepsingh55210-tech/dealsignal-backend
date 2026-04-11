@@ -1,14 +1,8 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const otps = {};
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL,
-    pass: process.env.EMAIL_PASSWORD,
-  },
-});
 
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -27,8 +21,8 @@ const sendOTP = async (mobile, otp, email) => {
   if (!email) return { success: true };
 
   try {
-    await transporter.sendMail({
-      from: `"DealSignal CRM" <${process.env.EMAIL}>`,
+    await resend.emails.send({
+      from: 'DealSignal CRM <onboarding@resend.dev>',
       to: email,
       subject: '🔐 Your DealSignal Login OTP',
       html: `
@@ -49,6 +43,7 @@ const sendOTP = async (mobile, otp, email) => {
         </div>
       `,
     });
+
     console.log(`✅ OTP email sent to ${email}`);
     return { success: true };
   } catch (err) {
