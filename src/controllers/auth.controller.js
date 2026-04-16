@@ -23,7 +23,7 @@ const sendOTP = async (req, res, next) => {
 
         const otp = otpService.generateOTP();
         await otpService.saveOTP(mobile, otp);
-        const sent = await otpService.sendOTP(mobile, otp, email); // ✅ email pass kiya
+        const sent = await otpService.sendOTP(mobile, otp, email);
 
         if (!sent.success) {
             console.log('OTP send failed');
@@ -122,4 +122,45 @@ const updateProfile = async (req, res, next) => {
     }
 };
 
-module.exports = { sendOTP, verifyOTP, logout, getMe, updateProfile };
+// ✅ Onboarding submit
+const submitOnboarding = async (req, res, next) => {
+    try {
+        const {
+            city,
+            experience,
+            propertyType,
+            dealType,
+            monthlyLeads,
+            leadSource,
+            painPoint
+        } = req.body;
+
+        const broker = await Broker.findById(req.broker._id);
+        if (!broker) {
+            return errorResponse(res, "Broker not found", 404);
+        }
+
+        broker.onboarding = {
+            completed: true,
+            city,
+            experience,
+            propertyType,
+            dealType,
+            monthlyLeads,
+            leadSource,
+            painPoint
+        };
+
+        await broker.save();
+
+        const brokerData = broker.toObject();
+        delete brokerData.wa_access_token;
+        delete brokerData.__v;
+
+        return successResponse(res, brokerData, "Onboarding completed!");
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = { sendOTP, verifyOTP, logout, getMe, updateProfile, submitOnboarding };

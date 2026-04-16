@@ -18,7 +18,19 @@ const brokerSchema = new mongoose.Schema({
     wa_connected: { type: Boolean, default: false },
     wa_verified_phone: { type: String, default: null },
     lastActive: { type: Date },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+
+    // ✅ Onboarding fields
+    onboarding: {
+        completed: { type: Boolean, default: false },
+        city: { type: String, default: null },
+        experience: { type: String, default: null },
+        propertyType: { type: String, enum: ['residential', 'commercial', 'both'], default: null },
+        dealType: { type: String, enum: ['buy', 'rent', 'both'], default: null },
+        monthlyLeads: { type: String, default: null },
+        leadSource: { type: String, default: null },
+        painPoint: { type: String, default: null },
+    }
 });
 
 brokerSchema.pre('save', function (next) {
