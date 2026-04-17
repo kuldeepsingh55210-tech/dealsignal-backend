@@ -30,7 +30,11 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app') || origin.endsWith('.railway.app')) {
+        if (!origin || allowedOrigins.includes(origin) ||
+            origin.endsWith('.vercel.app') ||
+            origin.endsWith('.railway.app') ||
+            origin.endsWith('.narrowtech.in') ||
+            origin === 'https://narrowtech.in') {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
