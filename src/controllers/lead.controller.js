@@ -8,7 +8,6 @@ const getLeads = async (req, res) => {
     try {
         const tenantId = req.broker.tenantId;
 
-        // Optional status filter
         const filter = { tenantId };
         if (req.query.status) {
             filter.status = req.query.status;
@@ -33,7 +32,6 @@ const getLeadStats = async (req, res) => {
         const hot = await Lead.countDocuments({ tenantId, status: 'HOT' });
         const qualified = await Lead.countDocuments({ tenantId, status: 'qualified' });
 
-        // Count today's leads
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
         const newToday = await Lead.countDocuments({
@@ -48,7 +46,34 @@ const getLeadStats = async (req, res) => {
     }
 };
 
+// ✅ @desc    Update lead status + notes
+// @route   PATCH /api/leads/:id
+// @access  Private
+const updateLead = async (req, res) => {
+    try {
+        const tenantId = req.broker.tenantId;
+        const { id } = req.params;
+        const { status, notes } = req.body;
+
+        const lead = await Lead.findOne({ _id: id, tenantId });
+        if (!lead) {
+            return errorResponse(res, 'Lead not found', 404);
+        }
+
+        if (status) lead.status = status;
+        if (notes !== undefined) lead.notes = notes;
+        lead.lastInteraction = new Date();
+
+        await lead.save();
+        return successResponse(res, lead, 'Lead updated successfully', 200);
+    } catch (error) {
+        console.error('[updateLead] Error:', error.message);
+        return errorResponse(res, 'Error updating lead', 500);
+    }
+};
+
 module.exports = {
     getLeads,
-    getLeadStats
+    getLeadStats,
+    updateLead
 };

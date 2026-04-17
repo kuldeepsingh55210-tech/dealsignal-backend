@@ -1,13 +1,15 @@
 const express = require('express');
-const { getLeads, getLeadStats } = require('../controllers/lead.controller');
+const { getLeads, getLeadStats, updateLead } = require('../controllers/leads.controller');
 const { protect } = require('../middleware/auth.middleware');
 
 const router = express.Router();
 
-// Apply auth middleware to all lead routes
 router.use(protect);
 
 router.get('/', getLeads);
 router.get('/stats', getLeadStats);
+
+// ✅ Lead status + notes update
+router.patch('/:id', updateLead);
 
 module.exports = router;
