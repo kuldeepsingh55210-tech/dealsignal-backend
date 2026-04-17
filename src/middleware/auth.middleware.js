@@ -25,6 +25,14 @@ const protect = async (req, res, next) => {
             return errorResponse(res, "Account not found or deactivated", 401);
         }
 
+        // ✅ Subscription check (superadmin ko exempt karo)
+        if (broker.role !== 'superadmin') {
+            const now = new Date();
+            if (broker.subscription?.expiresAt && broker.subscription.expiresAt < now) {
+                return errorResponse(res, "Subscription expired. Please renew your plan.", 403);
+            }
+        }
+
         req.broker = broker;
         req.tenant = {
             id: broker.tenantId,

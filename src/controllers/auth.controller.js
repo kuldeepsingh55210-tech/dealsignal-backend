@@ -13,10 +13,18 @@ const sendOTP = async (req, res, next) => {
 
         let broker = await Broker.findOne({ mobile });
         if (!broker) {
+            // ✅ Trial 14 din set karo
+            const trialExpiry = new Date();
+            trialExpiry.setDate(trialExpiry.getDate() + 14);
+
             broker = new Broker({
                 name: name || 'Broker',
                 email,
-                mobile
+                mobile,
+                subscription: {
+                    plan: 'trial',
+                    expiresAt: trialExpiry
+                }
             });
             await broker.save();
         }
