@@ -25,7 +25,7 @@ const verifyWebhook = (req, res) => {
 
 // Handle incoming messages
 const handleIncomingMessage = async (req, res) => {
-    res.status(200).send('EVENT_RECEIVED'); // ✅ Meta ko pehle 200 do
+    res.status(200).send('EVENT_RECEIVED');
 
     try {
         const body = req.body;
@@ -41,7 +41,6 @@ const handleIncomingMessage = async (req, res) => {
                     const messageBody = message.text?.body || '';
                     const messageId = message.id;
 
-                    // Identify which broker this message belongs to via phone_number_id
                     const phoneNumberId = metadata?.phone_number_id;
                     if (!phoneNumberId) {
                         console.warn('⚠️ Webhook missing phone_number_id in metadata, skipping.');
@@ -61,7 +60,6 @@ const handleIncomingMessage = async (req, res) => {
                     const tenantId = broker.tenantId;
                     console.log(`📩 Incoming from ${from} for tenant ${tenantId}: "${messageBody}"`);
 
-                    // Find or create Lead scoped to this tenant
                     let lead = await Lead.findOne({ phone: from, tenantId });
                     if (!lead) {
                         lead = await Lead.create({
@@ -76,7 +74,6 @@ const handleIncomingMessage = async (req, res) => {
                         console.log(`🆕 New lead created: ${lead._id} for tenant ${tenantId}`);
                     }
 
-                    // Save inbound message
                     await Message.create({
                         tenantId,
                         leadId: lead._id,
@@ -86,7 +83,6 @@ const handleIncomingMessage = async (req, res) => {
                         waMessageId: messageId
                     });
 
-                    // State Machine
                     const msg = messageBody.trim().toLowerCase();
                     let replyText = '';
 
@@ -151,7 +147,6 @@ const handleIncomingMessage = async (req, res) => {
                         case 8:
                             lead.qualification.occupation = messageBody;
 
-                            // Auto Categorization
                             let score = 'warm';
                             let tline = (lead.qualification.timeline || '').toLowerCase();
 
@@ -169,7 +164,6 @@ const handleIncomingMessage = async (req, res) => {
 
                             replyText = `✅ Shukriya! Aapki details note kar li gayi hain.\nHamara broker jald aapse contact karega. 🏠`;
 
-                            // ✅ Broker ko WhatsApp Notification bhejo
                             try {
                                 const scoreEmoji = score === 'hot' ? '🔥' : score === 'warm' ? '🌡️' : '❄️';
                                 const notificationText = `${scoreEmoji} *New ${score.toUpperCase()} Lead!*\n\n👤 *Name:* ${lead.name}\n📱 *Phone:* ${lead.phone}\n🏠 *Want:* ${lead.qualification.category} - ${lead.qualification.propertyType}\n📍 *Location:* ${lead.qualification.location}\n💰 *Budget:* ${lead.qualification.budget}\n📅 *Timeline:* ${lead.qualification.timeline}\n💼 *Occupation:* ${lead.qualification.occupation}\n\n🔗 View: https://app.narrowtech.in/leads`;
@@ -184,14 +178,19 @@ const handleIncomingMessage = async (req, res) => {
                             break;
 
                         default:
+                            // ✅ Completed lead dobara message kare toh fresh start
+                            lead.qualificationStep = 0;
+                            lead.qualification = {};
+                            lead.status = 'new';
                             lead.lastInteraction = new Date();
-                            lead.markModified('qualification'); // ✅ Fix
+                            lead.markModified('qualification');
                             await lead.save();
-                            continue;
+                            replyText = `Namaste! 🙏 Aap kya chahte hain?\n1️⃣ Property Kharidna (Buy)\n2️⃣ Kiraye Par Lena (Rent)`;
+                            break;
                     }
 
                     lead.lastInteraction = new Date();
-                    lead.markModified('qualification'); // ✅ Fix
+                    lead.markModified('qualification');
                     await lead.save();
 
                     if (replyText) {
@@ -210,13 +209,10 @@ const handleIncomingMessage = async (req, res) => {
             }
         }
     } catch (error) {
-        console.error('❌ Webhook Error:', error.message, error.stack); // ✅ Stack trace bhi log hoga
+        console.error('❌ Webhook Error:', error.message, error.stack);
     }
 };
 
-// @desc    Get all messages for a specific lead
-// @route   GET /api/messages/:leadId
-// @access  Private
 const getMessagesByLead = async (req, res) => {
     try {
         const { leadId } = req.params;
@@ -235,9 +231,6 @@ const getMessagesByLead = async (req, res) => {
     }
 };
 
-// @desc    Send a manual message from the dashboard
-// @route   POST /api/whatsapp/send
-// @access  Private
 const sendManualMessage = async (req, res) => {
     try {
         const { to, message } = req.body;
