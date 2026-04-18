@@ -51,7 +51,7 @@ const handleIncomingMessage = async (req, res) => {
                     let broker = await Broker.findOne({ wa_phone_number_id: phoneNumberId, wa_connected: true });
                     if (!broker) {
                         console.warn(`⚠️ No connected broker found for phone_number_id: ${phoneNumberId}. Falling back to default broker.`);
-                        broker = await Broker.findOne(); // Grab first available broker
+                        broker = await Broker.findOne();
                         if (!broker) {
                             console.error('❌ No brokers exist in the database. Cannot assign lead.');
                             continue;
@@ -168,6 +168,19 @@ const handleIncomingMessage = async (req, res) => {
 
                             replyText = `✅ Shukriya! Aapki details note kar li gayi hain.\nHamara broker jald aapse contact karega. 🏠`;
                             lead.qualificationStep = 9;
+
+                            // ✅ Broker ko WhatsApp Notification bhejo
+                            try {
+                                const scoreEmoji = score === 'hot' ? '🔥' : score === 'warm' ? '🌡️' : '❄️';
+                                const notificationText = `${scoreEmoji} *New ${score.toUpperCase()} Lead!*\n\n👤 *Name:* ${lead.name}\n📱 *Phone:* ${lead.phone}\n🏠 *Want:* ${lead.qualification.category} - ${lead.qualification.propertyType}\n📍 *Location:* ${lead.qualification.location}\n💰 *Budget:* ${lead.qualification.budget}\n📅 *Timeline:* ${lead.qualification.timeline}\n💼 *Occupation:* ${lead.qualification.occupation}\n\n🔗 View: https://app.narrowtech.in/leads`;
+
+                                const brokerPhone = '91' + broker.mobile;
+                                const notifResult = await whatsappService.sendMessage(brokerPhone, notificationText);
+                                console.log(`🔔 Broker notification sent to ${brokerPhone}: ${notifResult.success ? '✅' : '❌'}`);
+                            } catch (notifError) {
+                                console.error('❌ Notification error:', notifError.message);
+                            }
+
                             break;
                         default:
                             lead.lastInteraction = new Date();
@@ -209,7 +222,6 @@ const getMessagesByLead = async (req, res) => {
         const { leadId } = req.params;
         const tenantId = req.broker.tenantId;
 
-        // Verify lead belongs to this tenant
         const lead = await Lead.findOne({ _id: leadId, tenantId });
         if (!lead) {
             return errorResponse(res, 'Lead not found', 404);
@@ -240,17 +252,12 @@ const sendManualMessage = async (req, res) => {
             return errorResponse(res, 'Lead not found for this tenant', 404);
         }
 
-        // Send via WhatsApp Service
-        const sendResult = await whatsappService.sendMessage(
-            to,
-            message
-        );
+        const sendResult = await whatsappService.sendMessage(to, message);
 
         if (!sendResult.success) {
             return errorResponse(res, `Failed to send message: ${JSON.stringify(sendResult.error)}`, 500);
         }
 
-        // Save outbound message
         const newMessage = await Message.create({
             tenantId,
             leadId: lead._id,
@@ -259,7 +266,6 @@ const sendManualMessage = async (req, res) => {
             status: 'sent'
         });
 
-        // Update lead interaction
         lead.lastInteraction = new Date();
         await lead.save();
 
