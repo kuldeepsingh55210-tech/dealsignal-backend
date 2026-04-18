@@ -11,6 +11,7 @@ const authRoutes = require('./src/routes/auth.routes');
 const webhookRoutes = require('./src/routes/webhook.routes');
 const leadRoutes = require('./src/routes/lead.routes');
 const whatsappRoutes = require('./src/routes/whatsapp.routes');
+const reminderRoutes = require('./src/routes/reminder.routes');
 const errorMiddleware = require('./src/middleware/error.middleware');
 
 const app = express();
@@ -58,6 +59,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api', webhookRoutes);
 app.use('/api/leads', leadRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
+// ✅ Reminder routes
+app.use('/api/reminders', reminderRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'DealSignal API Running', env: process.env.NODE_ENV || 'development' }));
 

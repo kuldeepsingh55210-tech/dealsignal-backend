@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const Broker = require('../models/Broker');
 const Lead = require('../models/Lead');
 const Message = require('../models/Message');
+const Reminder = require('../models/Reminder');
 const whatsappService = require('../services/whatsapp.service');
 
 // Run every hour at minute 0
@@ -30,9 +31,8 @@ cron.schedule('0 * * * *', async () => {
                 } else if (daysDiff === 3) {
                     messageToSend = `Hi ${lead.name}, we have some new listings that match your criteria. Are you free for a quick call?`;
                 } else if (daysDiff === 7) {
-                    // Meta requires templates after 24h of last user message.
                     isTemplate = true;
-                    templateName = 're_engagement_7d'; // Must match approved template in Meta
+                    templateName = 're_engagement_7d';
                 }
 
                 if (messageToSend || isTemplate) {
@@ -66,7 +66,6 @@ cron.schedule('0 * * * *', async () => {
                             status: 'sent'
                         });
 
-                        // Update lead interaction so we don't send again today
                         lead.lastInteraction = new Date();
                         await lead.save();
                     }
@@ -75,5 +74,41 @@ cron.schedule('0 * * * *', async () => {
         }
     } catch (error) {
         console.error('[CRON] Automation error:', error);
+    }
+});
+
+// ✅ Reminder Check — Har minute run karo
+cron.schedule('* * * * *', async () => {
+    try {
+        const now = new Date();
+        const dueReminders = await Reminder.find({
+            remindAt: { $lte: now },
+            isCompleted: false,
+            notificationSent: false
+        }).populate('leadId', 'name phone qualification')
+          .populate('brokerId', 'mobile name');
+
+        for (const reminder of dueReminders) {
+            const broker = reminder.brokerId;
+            const lead = reminder.leadId;
+
+            if (!broker || !lead) continue;
+
+            // ✅ WhatsApp notification broker ko bhejo
+            const notificationText = `🔔 *Follow-up Reminder!*\n\n👤 *Lead:* ${lead.name}\n📱 *Phone:* ${lead.phone}\n📝 *Note:* ${reminder.note}\n\n🔗 View: https://app.narrowtech.in/leads`;
+
+            const brokerPhone = '91' + broker.mobile;
+            const result = await whatsappService.sendMessage(brokerPhone, notificationText);
+
+            if (result.success) {
+                console.log(`🔔 Reminder sent to broker ${broker.name} for lead ${lead.name}`);
+            }
+
+            // ✅ Mark notification sent
+            reminder.notificationSent = true;
+            await reminder.save();
+        }
+    } catch (error) {
+        console.error('[CRON] Reminder check error:', error);
     }
 });
