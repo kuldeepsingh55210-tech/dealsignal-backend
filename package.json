@@ -23,6 +23,7 @@
     "mongoose": "^8.23.0",
     "node-cron": "^3.0.3",
     "nodemailer": "^8.0.5",
+    "razorpay": "^2.9.6",
     "resend": "^6.10.0",
     "twilio": "^4.19.0",
     "winston": "^3.11.0"

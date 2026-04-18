@@ -13,8 +13,12 @@ const brokerSchema = new mongoose.Schema({
     role: { type: String, enum: ['broker', 'superadmin'], default: 'broker' },
     isActive: { type: Boolean, default: true },
     subscription: {
-        plan: { type: String, enum: ['trial', 'basic', 'pro'], default: 'trial' },
-        expiresAt: { type: Date }
+        plan: { type: String, enum: ['trial', 'starter', 'pro', 'business'], default: 'trial' },
+        expiresAt: { type: Date },
+        leadsLimit: { type: Number, default: 50 },
+        leadsUsed: { type: Number, default: 0 },
+        lastPaymentId: { type: String, default: null },
+        lastOrderId: { type: String, default: null }
     },
     wa_phone_number_id: { type: String, default: null },
     wa_access_token: { type: String, default: null },
