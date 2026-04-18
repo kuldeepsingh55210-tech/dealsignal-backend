@@ -1,6 +1,5 @@
 const axios = require('axios');
 
-// Send a plain text message.
 const sendMessage = async (to, text) => {
     const pid = process.env.WHATSAPP_PHONE_NUMBER_ID;
     const token = process.env.WHATSAPP_TOKEN;
@@ -28,7 +27,6 @@ const sendMessage = async (to, text) => {
     }
 };
 
-// Send a pre-approved template message (required for messages sent after 24h window).
 const sendTemplateMessage = async (to, templateName) => {
     const pid = process.env.WHATSAPP_PHONE_NUMBER_ID;
     const token = process.env.WHATSAPP_TOKEN;
