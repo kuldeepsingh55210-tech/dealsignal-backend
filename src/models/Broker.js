@@ -1,10 +1,14 @@
 const mongoose = require('mongoose');
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 
 const brokerSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true },
     mobile: { type: String, required: true, unique: true },
+    password: { type: String, default: null },
+    gender: { type: String, enum: ['male', 'female', 'other'], default: null },
+    city: { type: String, default: null },
     tenantId: { type: String, unique: true },
     role: { type: String, enum: ['broker', 'superadmin'], default: 'broker' },
     isActive: { type: Boolean, default: true },
@@ -20,6 +24,10 @@ const brokerSchema = new mongoose.Schema({
     lastActive: { type: Date },
     createdAt: { type: Date, default: Date.now },
 
+    // ✅ Password Reset
+    resetPasswordToken: { type: String, default: null },
+    resetPasswordExpiry: { type: Date, default: null },
+
     // ✅ Onboarding fields
     onboarding: {
         completed: { type: Boolean, default: false },
@@ -33,11 +41,20 @@ const brokerSchema = new mongoose.Schema({
     }
 });
 
-brokerSchema.pre('save', function (next) {
+// ✅ Password hash before save
+brokerSchema.pre('save', async function (next) {
     if (!this.tenantId) {
         this.tenantId = crypto.randomUUID();
     }
+    if (this.isModified('password') && this.password) {
+        this.password = await bcrypt.hash(this.password, 10);
+    }
     next();
 });
+
+// ✅ Password compare method
+brokerSchema.methods.comparePassword = async function (candidatePassword) {
+    return bcrypt.compare(candidatePassword, this.password);
+};
 
 module.exports = mongoose.model('Broker', brokerSchema);
