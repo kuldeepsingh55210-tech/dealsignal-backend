@@ -25,7 +25,7 @@ const verifyWebhook = (req, res) => {
 
 // Handle incoming messages
 const handleIncomingMessage = async (req, res) => {
-    res.status(200).send('EVENT_RECEIVED');
+    res.status(200).send('EVENT_RECEIVED'); // ✅ Meta ko pehle 200 do
 
     try {
         const body = req.body;
@@ -153,7 +153,7 @@ const handleIncomingMessage = async (req, res) => {
 
                             // Auto Categorization
                             let score = 'warm';
-                            let tline = lead.qualification.timeline.toLowerCase();
+                            let tline = (lead.qualification.timeline || '').toLowerCase();
 
                             if (tline.includes('1') || tline.includes('2') || tline.includes('3') || tline.includes('jald') || tline.includes('immediately') || tline.includes('soon')) {
                                 score = 'hot';
@@ -165,9 +165,9 @@ const handleIncomingMessage = async (req, res) => {
 
                             lead.qualification.leadScore = score;
                             lead.status = 'qualified';
+                            lead.qualificationStep = 9;
 
                             replyText = `✅ Shukriya! Aapki details note kar li gayi hain.\nHamara broker jald aapse contact karega. 🏠`;
-                            lead.qualificationStep = 9;
 
                             // ✅ Broker ko WhatsApp Notification bhejo
                             try {
@@ -182,20 +182,20 @@ const handleIncomingMessage = async (req, res) => {
                             }
 
                             break;
+
                         default:
                             lead.lastInteraction = new Date();
+                            lead.markModified('qualification'); // ✅ Fix
                             await lead.save();
                             continue;
                     }
 
                     lead.lastInteraction = new Date();
+                    lead.markModified('qualification'); // ✅ Fix
                     await lead.save();
 
                     if (replyText) {
-                        const sendResult = await whatsappService.sendMessage(
-                            from,
-                            replyText
-                        );
+                        const sendResult = await whatsappService.sendMessage(from, replyText);
                         console.log(`📤 Reply sent: ${sendResult.success ? '✅' : '❌'}`);
 
                         await Message.create({
@@ -210,7 +210,7 @@ const handleIncomingMessage = async (req, res) => {
             }
         }
     } catch (error) {
-        console.error('❌ Webhook Error:', error.message);
+        console.error('❌ Webhook Error:', error.message, error.stack); // ✅ Stack trace bhi log hoga
     }
 };
 
