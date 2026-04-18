@@ -2,6 +2,7 @@ const Broker = require('../models/Broker');
 const otpService = require('../services/otp.service');
 const jwtService = require('../services/jwt.service');
 const { successResponse, errorResponse } = require('../utils/response');
+const axios = require('axios');
 
 const sendOTP = async (req, res, next) => {
     try {
@@ -13,7 +14,6 @@ const sendOTP = async (req, res, next) => {
 
         let broker = await Broker.findOne({ mobile });
         if (!broker) {
-            // ✅ Trial 14 din set karo
             const trialExpiry = new Date();
             trialExpiry.setDate(trialExpiry.getDate() + 14);
 
@@ -130,17 +130,11 @@ const updateProfile = async (req, res, next) => {
     }
 };
 
-// ✅ Onboarding submit
 const submitOnboarding = async (req, res, next) => {
     try {
         const {
-            city,
-            experience,
-            propertyType,
-            dealType,
-            monthlyLeads,
-            leadSource,
-            painPoint
+            city, experience, propertyType,
+            dealType, monthlyLeads, leadSource, painPoint
         } = req.body;
 
         const broker = await Broker.findById(req.broker._id);
@@ -150,13 +144,8 @@ const submitOnboarding = async (req, res, next) => {
 
         broker.onboarding = {
             completed: true,
-            city,
-            experience,
-            propertyType,
-            dealType,
-            monthlyLeads,
-            leadSource,
-            painPoint
+            city, experience, propertyType,
+            dealType, monthlyLeads, leadSource, painPoint
         };
 
         await broker.save();
@@ -171,4 +160,71 @@ const submitOnboarding = async (req, res, next) => {
     }
 };
 
-module.exports = { sendOTP, verifyOTP, logout, getMe, updateProfile, submitOnboarding };
+// ✅ WhatsApp Embedded Signup — Connect karo
+const connectWhatsApp = async (req, res, next) => {
+    try {
+        const { code } = req.body;
+
+        if (!code) {
+            return errorResponse(res, "Authorization code missing", 400);
+        }
+
+        // Code ko access token mein exchange karo
+        const tokenResponse = await axios.get(
+            `https://graph.facebook.com/v19.0/oauth/access_token`,
+            {
+                params: {
+                    client_id: process.env.META_APP_ID,
+                    client_secret: process.env.META_APP_SECRET,
+                    code: code,
+                }
+            }
+        );
+
+        const accessToken = tokenResponse.data.access_token;
+
+        // WhatsApp Business Account details lo
+        const waResponse = await axios.get(
+            `https://graph.facebook.com/v19.0/me/businesses`,
+            {
+                params: { access_token: accessToken }
+            }
+        );
+
+        const waAccountId = waResponse.data.data?.[0]?.id;
+
+        // Phone number ID lo
+        const phoneResponse = await axios.get(
+            `https://graph.facebook.com/v19.0/${waAccountId}/phone_numbers`,
+            {
+                params: { access_token: accessToken }
+            }
+        );
+
+        const phoneNumberId = phoneResponse.data.data?.[0]?.id;
+        const verifiedPhone = phoneResponse.data.data?.[0]?.display_phone_number;
+
+        // Broker update karo
+        const broker = await Broker.findById(req.broker._id);
+        broker.wa_access_token = accessToken;
+        broker.wa_business_account_id = waAccountId;
+        broker.wa_phone_number_id = phoneNumberId;
+        broker.wa_verified_phone = verifiedPhone;
+        broker.wa_connected = true;
+        await broker.save();
+
+        const brokerData = broker.toObject();
+        delete brokerData.wa_access_token;
+        delete brokerData.__v;
+
+        return successResponse(res, brokerData, "WhatsApp connected successfully!");
+    } catch (error) {
+        console.error('[connectWhatsApp] Error:', error.message);
+        return errorResponse(res, "Failed to connect WhatsApp", 500);
+    }
+};
+
+module.exports = {
+    sendOTP, verifyOTP, logout, getMe,
+    updateProfile, submitOnboarding, connectWhatsApp
+};

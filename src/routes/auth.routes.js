@@ -15,6 +15,9 @@ router.post('/verify-otp', authController.verifyOTP);
 router.post('/logout', protect, authController.logout);
 router.get('/me', protect, authController.getMe);
 router.put('/profile', protect, authController.updateProfile);
-router.post('/onboarding', protect, authController.submitOnboarding); // ✅ New
+router.post('/onboarding', protect, authController.submitOnboarding);
+
+// ✅ WhatsApp Embedded Signup
+router.post('/whatsapp/connect', protect, authController.connectWhatsApp);
 
 module.exports = router;
