@@ -13,6 +13,7 @@ const leadRoutes = require('./src/routes/lead.routes');
 const whatsappRoutes = require('./src/routes/whatsapp.routes');
 const reminderRoutes = require('./src/routes/reminder.routes');
 const paymentRoutes = require('./src/routes/payment.routes');
+const adminRoutes = require('./src/routes/admin.routes'); // ✅ Admin routes
 const errorMiddleware = require('./src/middleware/error.middleware');
 
 const app = express();
@@ -26,6 +27,7 @@ app.use(helmet());
 // CORS
 const allowedOrigins = [
     'http://localhost:5173',
+    'http://localhost:5174',
     process.env.CLIENT_URL,
     process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null
 ].filter(Boolean);
@@ -61,8 +63,8 @@ app.use('/api', webhookRoutes);
 app.use('/api/leads', leadRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/reminders', reminderRoutes);
-// ✅ Payment routes
 app.use('/api/payments', paymentRoutes);
+app.use('/api/admin', adminRoutes); // ✅ Admin routes
 
 app.get('/api/health', (req, res) => res.json({ status: 'DealSignal API Running', env: process.env.NODE_ENV || 'development' }));
 
