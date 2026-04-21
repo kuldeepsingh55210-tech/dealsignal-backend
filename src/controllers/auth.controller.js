@@ -108,7 +108,7 @@ const loginWithPassword = async (req, res, next) => {
             return errorResponse(res, "Email aur password dono chahiye", 400);
         }
 
-        const broker = await Broker.findOne({ email });
+        const broker = await Broker.findOne({ email }).select('+password');
         if (!broker || !broker.isActive) {
             return errorResponse(res, "Account nahi mila", 401);
         }
