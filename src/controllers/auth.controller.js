@@ -23,7 +23,6 @@ const registerSendOTP = async (req, res, next) => {
             return errorResponse(res, "Password kam se kam 6 characters ka hona chahiye", 400);
         }
 
-        // Check existing
         const existingEmail = await Broker.findOne({ email });
         if (existingEmail) {
             return errorResponse(res, "Email already registered hai", 400);
@@ -33,7 +32,6 @@ const registerSendOTP = async (req, res, next) => {
             return errorResponse(res, "Mobile number already registered hai", 400);
         }
 
-        // OTP bhejo
         const otp = otpService.generateOTP();
         await otpService.saveOTP(mobile, otp);
         const sent = await otpService.sendOTP(mobile, otp, email);
@@ -161,7 +159,7 @@ const forgotPassword = async (req, res, next) => {
 
         const resetToken = crypto.randomBytes(32).toString('hex');
         broker.resetPasswordToken = resetToken;
-        broker.resetPasswordExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 min
+        broker.resetPasswordExpiry = new Date(Date.now() + 30 * 60 * 1000);
         await broker.save();
 
         const resetUrl = `https://app.narrowtech.in/reset-password?token=${resetToken}`;
@@ -380,6 +378,7 @@ const submitOnboarding = async (req, res, next) => {
     }
 };
 
+// ✅ Embedded Signup Connect (App Review ke baad)
 const connectWhatsApp = async (req, res, next) => {
     try {
         const { code } = req.body;
@@ -435,9 +434,51 @@ const connectWhatsApp = async (req, res, next) => {
     }
 };
 
+// ✅ Manual Token Save (Jugad - App Review tak ke liye)
+const saveWhatsAppTokenManually = async (req, res, next) => {
+    try {
+        const { wa_phone_number_id, wa_access_token, wa_business_account_id } = req.body;
+
+        if (!wa_phone_number_id || !wa_access_token) {
+            return errorResponse(res, "Phone Number ID aur Access Token dono chahiye", 400);
+        }
+
+        // ✅ Token verify karo pehle Meta se
+        const whatsappService = require('../services/whatsapp.service');
+        const verifyResult = await whatsappService.verifyToken(wa_phone_number_id, wa_access_token);
+
+        if (!verifyResult.success) {
+            return errorResponse(res, "Invalid Token ya Phone Number ID — Meta se verify nahi hua", 400);
+        }
+
+        const broker = await Broker.findById(req.broker._id);
+        if (!broker) {
+            return errorResponse(res, "Broker not found", 404);
+        }
+
+        broker.wa_phone_number_id = wa_phone_number_id;
+        broker.wa_access_token = wa_access_token;
+        broker.wa_business_account_id = wa_business_account_id || null;
+        broker.wa_connected = true;
+        broker.wa_verified_phone = verifyResult.data?.display_phone_number || null;
+        await broker.save();
+
+        return successResponse(res, {
+            wa_connected: true,
+            wa_phone_number_id,
+            wa_verified_phone: broker.wa_verified_phone
+        }, "WhatsApp manually connected successfully! ✅");
+
+    } catch (error) {
+        console.error('[saveWhatsAppTokenManually] Error:', error.message);
+        return errorResponse(res, "Token save karne mein error aaya", 500);
+    }
+};
+
 module.exports = {
     sendOTP, verifyOTP, logout, getMe,
     updateProfile, submitOnboarding, connectWhatsApp,
     registerSendOTP, registerVerifyOTP,
-    loginWithPassword, forgotPassword, resetPassword
+    loginWithPassword, forgotPassword, resetPassword,
+    saveWhatsAppTokenManually  // ✅ New
 };
