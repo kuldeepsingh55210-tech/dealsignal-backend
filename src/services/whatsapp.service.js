@@ -1,8 +1,8 @@
 const axios = require('axios');
 
-const sendMessage = async (to, text) => {
-    const pid = process.env.WHATSAPP_PHONE_NUMBER_ID;
-    const token = process.env.WHATSAPP_TOKEN;
+const sendMessage = async (to, text, phoneNumberId = null, accessToken = null) => {
+    const pid = phoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID;
+    const token = accessToken || process.env.WHATSAPP_TOKEN;
 
     try {
         const response = await axios.post(
@@ -27,9 +27,9 @@ const sendMessage = async (to, text) => {
     }
 };
 
-const sendTemplateMessage = async (to, templateName) => {
-    const pid = process.env.WHATSAPP_PHONE_NUMBER_ID;
-    const token = process.env.WHATSAPP_TOKEN;
+const sendTemplateMessage = async (to, templateName, phoneNumberId = null, accessToken = null) => {
+    const pid = phoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID;
+    const token = accessToken || process.env.WHATSAPP_TOKEN;
 
     try {
         const response = await axios.post(

@@ -57,6 +57,10 @@ const handleIncomingMessage = async (req, res) => {
                         }
                     }
 
+                    // ✅ Broker ka apna token ya fallback to .env
+                    const brokerPhoneId = broker.wa_phone_number_id || process.env.WHATSAPP_PHONE_NUMBER_ID;
+                    const brokerToken = broker.wa_access_token || process.env.WHATSAPP_TOKEN;
+
                     const tenantId = broker.tenantId;
                     console.log(`📩 Incoming from ${from} for tenant ${tenantId}: "${messageBody}"`);
 
@@ -169,7 +173,13 @@ const handleIncomingMessage = async (req, res) => {
                                 const notificationText = `${scoreEmoji} *New ${score.toUpperCase()} Lead!*\n\n👤 *Name:* ${lead.name}\n📱 *Phone:* ${lead.phone}\n🏠 *Want:* ${lead.qualification.category} - ${lead.qualification.propertyType}\n📍 *Location:* ${lead.qualification.location}\n💰 *Budget:* ${lead.qualification.budget}\n📅 *Timeline:* ${lead.qualification.timeline}\n💼 *Occupation:* ${lead.qualification.occupation}\n\n🔗 View: https://app.narrowtech.in/leads`;
 
                                 const brokerPhone = '91' + broker.mobile;
-                                const notifResult = await whatsappService.sendMessage(brokerPhone, notificationText);
+                                // ✅ Broker ka apna token use karo notification ke liye
+                                const notifResult = await whatsappService.sendMessage(
+                                    brokerPhone,
+                                    notificationText,
+                                    brokerPhoneId,
+                                    brokerToken
+                                );
                                 console.log(`🔔 Broker notification sent to ${brokerPhone}: ${notifResult.success ? '✅' : '❌'}`);
                             } catch (notifError) {
                                 console.error('❌ Notification error:', notifError.message);
@@ -194,7 +204,13 @@ const handleIncomingMessage = async (req, res) => {
                     await lead.save();
 
                     if (replyText) {
-                        const sendResult = await whatsappService.sendMessage(from, replyText);
+                        // ✅ Broker ka apna token use karo reply ke liye
+                        const sendResult = await whatsappService.sendMessage(
+                            from,
+                            replyText,
+                            brokerPhoneId,
+                            brokerToken
+                        );
                         console.log(`📤 Reply sent: ${sendResult.success ? '✅' : '❌'}`);
 
                         await Message.create({
@@ -245,7 +261,14 @@ const sendManualMessage = async (req, res) => {
             return errorResponse(res, 'Lead not found for this tenant', 404);
         }
 
-        const sendResult = await whatsappService.sendMessage(to, message);
+        // ✅ Broker ka apna token use karo manual message ke liye
+        const broker = await Broker.findOne({ tenantId });
+        const sendResult = await whatsappService.sendMessage(
+            to,
+            message,
+            broker?.wa_phone_number_id || process.env.WHATSAPP_PHONE_NUMBER_ID,
+            broker?.wa_access_token || process.env.WHATSAPP_TOKEN
+        );
 
         if (!sendResult.success) {
             return errorResponse(res, `Failed to send message: ${JSON.stringify(sendResult.error)}`, 500);
