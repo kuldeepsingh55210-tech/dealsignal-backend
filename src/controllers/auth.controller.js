@@ -109,7 +109,7 @@ const loginWithPassword = async (req, res, next) => {
         const broker = await Broker.findOne({ email }).select('+password +role +isActive');
         if (!broker || !broker.isActive) {
             return errorResponse(res, "Account nahi mila", 401);
-        }s
+        }
 
         if (!broker.password) {
             return errorResponse(res, "Is account mein password set nahi hai. OTP se login karo.", 400);
